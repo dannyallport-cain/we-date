@@ -1,0 +1,377 @@
+// WeDate - Modern Dating App Prisma Schema
+// Inspired by Tinder, Bumble, and other modern dating platforms
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER MODELS
+// ============================================
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  phoneNumber     String?   @unique
+  passwordHash    String
+  
+  // Basic Info
+  firstName       String
+  lastName        String?
+  displayName     String
+  dateOfBirth     DateTime
+  gender          Gender
+  interestedIn    Gender[]
+  
+  // Profile Details
+  bio             String?   @db.Text
+  jobTitle        String?
+  company         String?
+  school          String?
+  height          Int?      // in centimeters
+  
+  // Location
+  location        String?
+  latitude        Float?
+  longitude       Float?
+  maxDistance     Int       @default(50) // in kilometers
+  
+  // Preferences
+  ageMin          Int       @default(18)
+  ageMax          Int       @default(99)
+  showMe          Gender    @default(EVERYONE)
+  
+  // Verification & Safety
+  isVerified      Boolean   @default(false)
+  verifiedAt      DateTime?
+  isEmailVerified Boolean   @default(false)
+  isPhoneVerified Boolean   @default(false)
+  
+  // Premium Features
+  isPremium       Boolean   @default(false)
+  premiumUntil    DateTime?
+  
+  // Privacy & Settings
+  isActive        Boolean   @default(true)
+  showDistance    Boolean   @default(true)
+  showAge         Boolean   @default(true)
+  incognitoMode   Boolean   @default(false)
+  pausedUntil     DateTime?
+  
+  // Activity
+  lastActive      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  
+  // Relations
+  photos          Photo[]
+  interests       UserInterest[]
+  prompts         UserPrompt[]
+  
+  sentSwipes      Swipe[]   @relation("SwipeSender")
+  receivedSwipes  Swipe[]   @relation("SwipeReceiver")
+  
+  matchesAsUser1  Match[]   @relation("MatchUser1")
+  matchesAsUser2  Match[]   @relation("MatchUser2")
+  
+  sentMessages    Message[] @relation("MessageSender")
+  
+  sentReports     Report[]  @relation("ReportSender")
+  receivedReports Report[]  @relation("ReportReceived")
+  
+  blockedUsers    Block[]   @relation("BlockSender")
+  blockedBy       Block[]   @relation("BlockReceived")
+  
+  superLikesGiven SuperLike[] @relation("SuperLikeSender")
+  superLikesReceived SuperLike[] @relation("SuperLikeReceiver")
+  
+  boosts          Boost[]
+  notifications   Notification[]
+  
+  @@index([latitude, longitude])
+  @@index([isActive, deletedAt])
+  @@index([lastActive])
+}
+
+enum Gender {
+  MAN
+  WOMAN
+  NON_BINARY
+  EVERYONE
+}
+
+// ============================================
+// PHOTO MODELS
+// ============================================
+
+model Photo {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  url         String
+  order       Int       @default(0)
+  isPrimary   Boolean   @default(false)
+  isVerified  Boolean   @default(false)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId, order])
+}
+
+// ============================================
+// INTERESTS & PROMPTS
+// ============================================
+
+model Interest {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  category    String?
+  icon        String?
+  
+  users       UserInterest[]
+  
+  @@index([category])
+}
+
+model UserInterest {
+  userId      String
+  interestId  String
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest    Interest  @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@id([userId, interestId])
+}
+
+model Prompt {
+  id          String    @id @default(cuid())
+  question    String    @unique
+  category    String?
+  isActive    Boolean   @default(true)
+  
+  userPrompts UserPrompt[]
+}
+
+model UserPrompt {
+  id          String    @id @default(cuid())
+  userId      String
+  promptId    String
+  answer      String    @db.Text
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt      Prompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+}
+
+// ============================================
+// SWIPE & MATCHING MODELS
+// ============================================
+
+model Swipe {
+  id          String    @id @default(cuid())
+  userId      String
+  targetUserId String
+  
+  user        User      @relation("SwipeSender", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser  User      @relation("SwipeReceiver", fields: [targetUserId], references: [id], onDelete: Cascade)
+  
+  action      SwipeAction
+  createdAt   DateTime  @default(now())
+  
+  @@unique([userId, targetUserId])
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([createdAt])
+}
+
+enum SwipeAction {
+  LIKE
+  PASS
+  SUPER_LIKE
+}
+
+model SuperLike {
+  id          String    @id @default(cuid())
+  userId      String
+  targetUserId String
+  
+  user        User      @relation("SuperLikeSender", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser  User      @relation("SuperLikeReceiver", fields: [targetUserId], references: [id], onDelete: Cascade)
+  
+  isUsed      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([targetUserId])
+}
+
+model Match {
+  id          String    @id @default(cuid())
+  user1Id     String
+  user2Id     String
+  
+  user1       User      @relation("MatchUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2       User      @relation("MatchUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  isActive    Boolean   @default(true)
+  messages    Message[]
+  
+  createdAt   DateTime  @default(now())
+  
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([createdAt])
+}
+
+// ============================================
+// MESSAGING MODELS
+// ============================================
+
+model Message {
+  id          String    @id @default(cuid())
+  matchId     String
+  senderId    String
+  
+  match       Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender      User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  content     String    @db.Text
+  contentType MessageType @default(TEXT)
+  mediaUrl    String?
+  
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+  
+  @@index([matchId, createdAt])
+  @@index([senderId])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  GIF
+  VIDEO
+  VOICE
+}
+
+// ============================================
+// SAFETY & MODERATION
+// ============================================
+
+model Report {
+  id          String    @id @default(cuid())
+  reporterId  String
+  reportedUserId String
+  
+  reporter    User      @relation("ReportSender", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User     @relation("ReportReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  
+  reason      ReportReason
+  description String?   @db.Text
+  status      ReportStatus @default(PENDING)
+  
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  
+  @@index([reportedUserId])
+  @@index([status])
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT
+  FAKE_PROFILE
+  HARASSMENT
+  SPAM
+  UNDERAGE
+  STOLEN_PHOTOS
+  SCAM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+model Block {
+  id          String    @id @default(cuid())
+  userId      String
+  blockedUserId String
+  
+  user        User      @relation("BlockSender", fields: [userId], references: [id], onDelete: Cascade)
+  blockedUser User      @relation("BlockReceived", fields: [blockedUserId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@unique([userId, blockedUserId])
+  @@index([userId])
+}
+
+// ============================================
+// PREMIUM FEATURES
+// ============================================
+
+model Boost {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  duration    Int       // in minutes
+  startedAt   DateTime  @default(now())
+  expiresAt   DateTime
+  isActive    Boolean   @default(true)
+  
+  @@index([userId, isActive])
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        NotificationType
+  title       String
+  message     String    @db.Text
+  data        Json?
+  
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  NEW_MATCH
+  NEW_MESSAGE
+  NEW_LIKE
+  SUPER_LIKE
+  PROFILE_VIEW
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  BOOST_EXPIRED
+  PREMIUM_EXPIRED
+}

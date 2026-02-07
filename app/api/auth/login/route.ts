@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { verifyPassword, generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -15,22 +15,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const result = await query(
-      'SELECT id, password_hash FROM users WHERE email = $1',
-      [email]
-    )
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        passwordHash: true,
+        displayName: true,
+        email: true,
+        isActive: true,
+        deletedAt: true,
+      }
+    })
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    const user = result.rows[0]
+    // Check if account is active
+    if (!user.isActive || user.deletedAt) {
+      return NextResponse.json(
+        { error: 'Account is inactive or deleted' },
+        { status: 401 }
+      )
+    }
 
     // Verify password
-    const isValid = await verifyPassword(password, user.password_hash)
+    const isValid = await verifyPassword(password, user.passwordHash)
 
     if (!isValid) {
       return NextResponse.json(
@@ -39,10 +52,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Update last active
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() }
+    })
+
     // Generate token
     const token = generateToken(user.id)
 
-    return NextResponse.json({ token, userId: user.id })
+    return NextResponse.json({ 
+      token, 
+      userId: user.id,
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+      }
+    })
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
@@ -27,19 +27,41 @@ export async function GET(request: NextRequest) {
     const userId = decoded.userId
 
     // Get user profile
-    const result = await query(
-      'SELECT id, email, name, age, bio, location, gender FROM users WHERE id = $1',
-      [userId]
-    )
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        photos: {
+          orderBy: { order: 'asc' }
+        },
+        interests: {
+          include: {
+            interest: true
+          }
+        },
+        prompts: {
+          include: {
+            prompt: true
+          }
+        }
+      }
+    })
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({ profile: result.rows[0] })
+    const age = Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+
+    return NextResponse.json({ 
+      profile: {
+        ...user,
+        age,
+        passwordHash: undefined, // Don't send password hash
+      }
+    })
   } catch (error) {
     console.error('Get profile error:', error)
     return NextResponse.json(
@@ -72,15 +94,33 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = decoded.userId
-    const { bio, location } = await request.json()
+    const updateData = await request.json()
+
+    // Remove fields that shouldn't be updated this way
+    delete updateData.id
+    delete updateData.email
+    delete updateData.passwordHash
+    delete updateData.createdAt
+    delete updateData.photos
+    delete updateData.interests
+    delete updateData.prompts
 
     // Update profile
-    await query(
-      'UPDATE users SET bio = $1, location = $2 WHERE id = $3',
-      [bio, location, userId]
-    )
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      }
+    })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true,
+      profile: {
+        ...updatedUser,
+        passwordHash: undefined
+      }
+    })
   } catch (error) {
     console.error('Update profile error:', error)
     return NextResponse.json(

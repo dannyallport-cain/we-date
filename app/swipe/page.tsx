@@ -2,27 +2,35 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import SwipeCard from '@/components/SwipeCard'
+import TopBar from '@/components/TopBar'
+import BottomNav from '@/components/BottomNav'
 
 interface User {
-  id: number
-  name: string
-  age: number
-  bio: string
-  location: string
-  photos: string[]
+  id: string
+  displayName: string
+  dateOfBirth: Date
+  bio?: string
+  location?: string
+  jobTitle?: string
+  company?: string
+  photos: { url: string; order: number }[]
+  interests?: { interest: { name: string; icon?: string } }[]
 }
 
 export default function SwipePage() {
   const router = useRouter()
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [matchNotification, setMatchNotification] = useState(false)
+  const [matchedUser, setMatchedUser] = useState<User | null>(null)
 
   useEffect(() => {
-    fetchNextUser()
+    fetchUsers()
   }, [])
 
-  const fetchNextUser = async () => {
+  const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -30,7 +38,7 @@ export default function SwipePage() {
         return
       }
 
-      const response = await fetch('/api/users/next', {
+      const response = await fetch('/api/discover', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -38,18 +46,19 @@ export default function SwipePage() {
 
       if (response.ok) {
         const data = await response.json()
-        setCurrentUser(data.user)
-      } else {
-        setCurrentUser(null)
+        setUsers(data.users || [])
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching user:', error)
+      console.error('Error fetching users:', error)
       setLoading(false)
     }
   }
 
-  const handleSwipe = async (liked: boolean) => {
+  const handleSwipe = async (direction: 'left' | 'right' | 'up') => {
+    const currentUser = users[currentIndex]
     if (!currentUser) return
 
     try {
@@ -62,109 +71,167 @@ export default function SwipePage() {
         },
         body: JSON.stringify({
           targetUserId: currentUser.id,
-          liked,
+          action: direction === 'left' ? 'PASS' : direction === 'up' ? 'SUPER_LIKE' : 'LIKE',
         }),
       })
 
       const data = await response.json()
 
       if (data.matched) {
+        setMatchedUser(currentUser)
         setMatchNotification(true)
         setTimeout(() => setMatchNotification(false), 3000)
       }
 
-      fetchNextUser()
+      setCurrentIndex(currentIndex + 1)
+
+      // Fetch more users if running low
+      if (currentIndex >= users.length - 2) {
+        fetchUsers()
+      }
     } catch (error) {
       console.error('Error swiping:', error)
+      setCurrentIndex(currentIndex + 1)
     }
+  }
+
+  const triggerSwipe = (direction: 'left' | 'right' | 'up') => {
+    handleSwipe(direction)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full border-4 border-primary-500 border-t-transparent animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Finding great matches...</p>
+        </div>
       </div>
     )
   }
 
+  const currentUser = users[currentIndex]
+
   return (
-    <main className="min-h-screen bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-wedate-pink">💕 WeDate</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => router.push('/matches')}
-              className="px-4 py-2 text-gray-700 hover:text-wedate-pink"
-            >
-              Matches
-            </button>
-            <button
-              onClick={() => router.push('/profile')}
-              className="px-4 py-2 text-gray-700 hover:text-wedate-pink"
-            >
-              Profile
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <TopBar 
+        rightAction={
+          <button className="text-2xl hover:scale-110 active:scale-95 transition-transform">
+            ⚙️
+          </button>
+        }
+      />
 
-      {/* Match notification */}
-      {matchNotification && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg">
-          🎉 It's a match!
-        </div>
-      )}
+      <main className="pt-16 pb-4 px-0 h-screen max-w-screen-sm mx-auto">
+        {/* Card Stack */}
+        <div className="relative h-[calc(100vh-180px)]">
+          {currentUser ? (
+            <>
+              {/* Next card (preview) */}
+              {users[currentIndex + 1] && (
+                <div className="absolute inset-4 scale-95 opacity-50 pointer-events-none">
+                  <div className="h-full w-full rounded-3xl shadow-xl bg-white overflow-hidden">
+                    <img
+                      src={users[currentIndex + 1].photos[0]?.url || '/placeholder-profile.jpg'}
+                      alt="Next profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
 
-      {/* Card */}
-      <div className="container mx-auto px-4 py-8 flex justify-center">
-        {currentUser ? (
-          <div className="relative w-full max-w-md">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="h-96 bg-gradient-to-br from-wedate-pink to-wedate-purple flex items-center justify-center text-white text-6xl">
-                {currentUser.name[0]}
-              </div>
-              
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  {currentUser.name}, {currentUser.age}
+              {/* Current card */}
+              <SwipeCard
+                user={currentUser}
+                onSwipe={handleSwipe}
+                onCardClick={() => router.push(`/profile/${currentUser.id}`)}
+              />
+            </>
+          ) : (
+            <div className="absolute inset-4 flex items-center justify-center">
+              <div className="text-center p-8">
+                <div className="text-6xl mb-4">🎉</div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  You're all caught up!
                 </h2>
-                {currentUser.location && (
-                  <p className="text-gray-600 mb-4">📍 {currentUser.location}</p>
-                )}
-                {currentUser.bio && (
-                  <p className="text-gray-700 mb-4">{currentUser.bio}</p>
-                )}
+                <p className="text-gray-600 mb-6">
+                  Check back later for more profiles
+                </p>
+                <button
+                  onClick={() => router.push('/matches')}
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-glow active:scale-95 transition-all duration-200"
+                >
+                  View Matches
+                </button>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Action buttons */}
-            <div className="flex justify-center gap-6 mt-6">
-              <button
-                onClick={() => handleSwipe(false)}
-                className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center text-3xl hover:scale-110 transition-transform"
-              >
-                ❌
-              </button>
-              <button
-                onClick={() => handleSwipe(true)}
-                className="w-16 h-16 bg-wedate-pink rounded-full shadow-lg flex items-center justify-center text-3xl hover:scale-110 transition-transform"
-              >
-                ❤️
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center">
-            <div className="text-6xl mb-4">😕</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              No more profiles
-            </h2>
-            <p className="text-gray-600">Check back later for more matches!</p>
+        {/* Action Buttons */}
+        {currentUser && (
+          <div className="flex justify-center items-center gap-4 px-4 mt-4">
+            <button
+              onClick={() => triggerSwipe('left')}
+              className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-white border-2 border-red-500 text-red-500 hover:bg-red-50"
+              aria-label="Pass"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => triggerSwipe('up')}
+              className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-white border-2 border-blue-500 text-blue-500 hover:bg-blue-50 text-2xl"
+              aria-label="Super Like"
+            >
+              ⭐
+            </button>
+            
+            <button
+              onClick={() => triggerSwipe('right')}
+              className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-gradient-to-br from-primary-500 to-accent-500 text-white"
+              aria-label="Like"
+            >
+              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         )}
-      </div>
-    </main>
+      </main>
+
+      <BottomNav />
+
+      {/* Match Notification */}
+      {matchNotification && matchedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 max-w-sm mx-4 text-center animate-scale-in shadow-2xl">
+            <div className="text-6xl mb-4 animate-bounce-subtle">🎉</div>
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
+              It's a Match!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You and {matchedUser.displayName} liked each other
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setMatchNotification(false)}
+                className="flex-1 bg-white text-primary-600 font-semibold py-3 px-6 rounded-full border-2 border-primary-500 hover:bg-primary-50 active:scale-95 transition-all duration-200"
+              >
+                Keep Swiping
+              </button>
+              <button
+                onClick={() => router.push('/matches')}
+                className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-glow active:scale-95 transition-all duration-200"
+              >
+                Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

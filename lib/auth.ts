@@ -17,13 +17,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
-export function generateToken(userId: number): string {
+export function generateToken(userId: string): string {
   return jwt.sign({ userId }, getJWTSecret(), { expiresIn: '7d' })
 }
 
-export function verifyToken(token: string): { userId: number } | null {
+export function verifyToken(token: string): { userId: string } | null {
   try {
-    return jwt.verify(token, getJWTSecret()) as { userId: number }
+    return jwt.verify(token, getJWTSecret()) as { userId: string }
   } catch {
     return null
   }
