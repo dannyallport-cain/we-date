@@ -1,0 +1,25 @@
+# AI Assistant Rules for we-date Project
+
+## Deployment Policy - CRITICAL
+
+### Git Operations
+- Push to GitHub whenever code changes are committed
+- Use: `git add -A && git commit -m "message" && git push origin main`
+
+### Vercel Deployment
+- **NEVER run `vercel --prod` or any vercel CLI deployment commands**
+- Git pushes to main branch automatically trigger Vercel deployments via GitHub integration
+- Running `vercel --prod` followed by git push causes DUPLICATE deployments
+- **ONLY** use Vercel CLI if user explicitly says "deploy to vercel now" or "manual vercel deploy"
+
+### Standard Workflow
+1. Make code changes
+2. Test with `npm run build`
+3. Commit and push to git: `git add -A && git commit -m "message" && git push origin main`
+4. **STOP** - Vercel auto-deploys from GitHub
+5. Do NOT run `vercel --prod`
+
+## General Guidelines
+- Always commit and push changes to git when completing features
+- Document significant changes in commit messages
+- Test builds locally with `npm run build` before pushing
