@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
   title: 'WeDate - Find Your Match',
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Toaster position="top-center" />
+      </body>
     </html>
   )
 }

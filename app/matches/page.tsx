@@ -2,13 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { format } from 'date-fns'
+import BottomNav from '@/components/BottomNav'
 
 interface Match {
-  id: number
-  userId: number
-  name: string
-  age: number
-  bio: string
+  id: string
+  user: {
+    id: string
+    displayName: string
+    age: number
+    bio: string | null
+    photos: { url: string }[]
+  }
+  lastMessageAt: string | null
+  lastMessage?: {
+    content: string | null
+    type: string
+    senderId: string
+  } | null
+  unreadCount?: number
 }
 
 export default function MatchesPage() {
@@ -47,77 +60,103 @@ export default function MatchesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full border-4 border-pink-500 border-t-transparent animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading matches...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-wedate-pink">💕 WeDate</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => router.push('/swipe')}
-              className="px-4 py-2 text-gray-700 hover:text-wedate-pink"
-            >
-              Swipe
-            </button>
-            <button
-              onClick={() => router.push('/profile')}
-              className="px-4 py-2 text-gray-700 hover:text-wedate-pink"
-            >
-              Profile
-            </button>
-          </div>
-        </div>
-      </nav>
+    <main className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-6 shadow-lg">
+        <h1 className="text-2xl font-bold">Matches</h1>
+        <p className="text-sm text-white/80 mt-1">
+          {matches.length} {matches.length === 1 ? 'match' : 'matches'}
+        </p>
+      </div>
 
-      {/* Matches */}
-      <div className="container mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">Your Matches</h2>
-        
+      {/* Matches List */}
+      <div className="container mx-auto px-4 py-6 max-w-2xl">
         {matches.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">💔</div>
-            <p className="text-gray-600 text-xl">No matches yet</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">No matches yet</h2>
+            <p className="text-gray-600 mb-6">Start swiping to find your perfect match!</p>
             <button
               onClick={() => router.push('/swipe')}
-              className="mt-4 px-6 py-3 bg-wedate-pink text-white rounded-full hover:bg-opacity-90"
+              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all"
             >
               Start Swiping
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {matches.map((match) => (
-              <div
-                key={match.id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-                onClick={() => {/* Navigate to chat */}}
-              >
-                <div className="h-48 bg-gradient-to-br from-wedate-pink to-wedate-purple flex items-center justify-center text-white text-5xl">
-                  {match.name[0]}
+          <div className="space-y-3">
+            {matches.map((match) => {
+              const photo = match.user.photos[0];
+              const lastMessage = match.lastMessage;
+              const hasUnread = match.unreadCount && match.unreadCount > 0;
+
+              return (
+                <div
+                  key={match.id}
+                  onClick={() => router.push(`/messages/${match.id}`)}
+                  className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden"
+                >
+                  <div className="flex items-center p-4 gap-4">
+                    {/* Profile Photo */}
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
+                      {photo ? (
+                        <Image
+                          src={photo.url}
+                          alt={match.user.displayName}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl text-gray-400">
+                          {match.user.displayName[0]}
+                        </div>
+                      )}
+                      {hasUnread && (
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-pink-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                          {match.unreadCount}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Match Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {match.user.displayName}, {match.user.age}
+                      </h3>
+                      {lastMessage ? (
+                        <p className={`text-sm truncate ${hasUnread ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                          {lastMessage.type === 'IMAGE' ? '📷 Photo' : lastMessage.content}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">Say hi!</p>
+                      )}
+                    </div>
+
+                    {/* Time */}
+                    {match.lastMessageAt && (
+                      <div className="text-xs text-gray-400">
+                        {format(new Date(match.lastMessageAt), 'MMM d')}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">
-                    {match.name}, {match.age}
-                  </h3>
-                  {match.bio && (
-                    <p className="text-gray-600 text-sm line-clamp-2">{match.bio}</p>
-                  )}
-                  <button className="mt-4 w-full px-4 py-2 bg-wedate-pink text-white rounded-lg hover:bg-opacity-90">
-                    💬 Chat
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      <BottomNav />
     </main>
   )
 }

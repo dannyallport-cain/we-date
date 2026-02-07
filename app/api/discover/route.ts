@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
+import { calculateDistance, formatDistance } from '@/lib/location'
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,10 +77,13 @@ export async function GET(request: NextRequest) {
         dateOfBirth: true,
         bio: true,
         location: true,
+        latitude: true,
+        longitude: true,
         jobTitle: true,
         company: true,
         school: true,
         height: true,
+        isVerified: true,
         photos: {
           orderBy: { order: 'asc' },
           select: {
@@ -110,16 +114,75 @@ export async function GET(request: NextRequest) {
           take: 3
         }
       },
-      take: 20, // Get 20 potential matches
+      take: 50, // Get more users for distance filtering
       orderBy: {
         lastActive: 'desc' // Prioritize active users
       }
     })
 
-    // TODO: Implement distance filtering based on latitude/longitude
-    // TODO: Implement recommendation algorithm based on interests, activity, etc.
+    // Filter by distance and calculate distance for each user
+    const usersWithDistance = users
+      .map((user) => {
+        // Calculate distance if both users have coordinates
+        let distance: number | null = null;
+        let distanceFormatted: string | null = null;
 
-    return NextResponse.json({ users })
+        if (
+          currentUser.latitude &&
+          currentUser.longitude &&
+          user.latitude &&
+          user.longitude
+        ) {
+          distance = calculateDistance(
+            { latitude: currentUser.latitude, longitude: currentUser.longitude },
+            { latitude: user.latitude, longitude: user.longitude }
+          );
+          distanceFormatted = formatDistance(distance);
+        }
+
+        // Calculate age
+        const age = Math.floor(
+          (today.getTime() - new Date(user.dateOfBirth).getTime()) / 
+          (365.25 * 24 * 60 * 60 * 1000)
+        );
+
+        return {
+          ...user,
+          age,
+          distance,
+          distanceFormatted,
+        };
+      })
+      .filter((user) => {
+        // Filter by max distance if set and both users have coordinates
+        if (
+          currentUser.maxDistance &&
+          user.distance !== null
+        ) {
+          return user.distance <= currentUser.maxDistance;
+        }
+        // Include users without distance if maxDistance not set or coordinates missing
+        return true;
+      })
+      .sort((a, b) => {
+        // Prioritize verified users
+        if (a.isVerified && !b.isVerified) return -1;
+        if (!a.isVerified && b.isVerified) return 1;
+        
+        // Then by distance (closer first)
+        if (a.distance !== null && b.distance !== null) {
+          return a.distance - b.distance;
+        }
+        
+        // Users without distance come last
+        if (a.distance !== null) return -1;
+        if (b.distance !== null) return 1;
+        
+        return 0;
+      })
+      .slice(0, 20); // Limit to 20 users
+
+    return NextResponse.json({ users: usersWithDistance })
   } catch (error) {
     console.error('Discover error:', error)
     return NextResponse.json(

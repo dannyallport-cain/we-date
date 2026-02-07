@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
+import PhotoUploader from '@/components/PhotoUploader'
 
 interface UserProfile {
   id: string
@@ -156,7 +157,12 @@ export default function ProfilePage() {
             </div>
 
             {editing ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Photo Upload Section */}
+                <div>
+                  <PhotoUploader />
+                </div>
+
                 <div>
                   <label className="block text-gray-700 font-medium mb-2">Bio</label>
                   <textarea

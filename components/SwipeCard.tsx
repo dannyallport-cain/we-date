@@ -9,8 +9,11 @@ interface SwipeCardProps {
     dateOfBirth: Date
     bio?: string
     location?: string
+    distance?: number | null
+    distanceFormatted?: string | null
     jobTitle?: string
     company?: string
+    isVerified?: boolean
     photos: { url: string; order: number }[]
     interests?: { interest: { name: string; icon?: string } }[]
   }
@@ -227,9 +230,16 @@ export default function SwipeCard({ user, onSwipe, onCardClick }: SwipeCardProps
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
           <div className="flex items-end justify-between mb-3">
             <div>
-              <h2 className="text-3xl font-bold mb-1">
-                {user.displayName}, {age}
-              </h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-3xl font-bold">
+                  {user.displayName}, {age}
+                </h2>
+                {user.isVerified && (
+                  <span className="text-2xl" title="Verified Profile">
+                    ✓
+                  </span>
+                )}
+              </div>
               {user.jobTitle && (
                 <p className="text-lg flex items-center gap-2">
                   <span>💼</span>
@@ -237,7 +247,12 @@ export default function SwipeCard({ user, onSwipe, onCardClick }: SwipeCardProps
                   {user.company && ` at ${user.company}`}
                 </p>
               )}
-              {user.location && (
+              {user.distanceFormatted ? (
+                <p className="text-md flex items-center gap-2 mt-1">
+                  <span>📍</span>
+                  {user.distanceFormatted}
+                </p>
+              ) : user.location && (
                 <p className="text-md flex items-center gap-2 mt-1">
                   <span>📍</span>
                   {user.location}
@@ -249,7 +264,8 @@ export default function SwipeCard({ user, onSwipe, onCardClick }: SwipeCardProps
                 e.stopPropagation()
                 onCardClick?.()
               }}
-              className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl hover:bg-white/30 active:scale-90 transition-all"
+              className="w-12 h-12 rounded-full bg-white hover:bg-gray-100 active:scale-90 transition-all shadow-lg flex items-center justify-center text-xl hover:shadow-xl"
+              title="View Profile"
             >
               ℹ️
             </button>
