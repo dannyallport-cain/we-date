@@ -129,3 +129,55 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get token from header
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Verify token
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    const userId = decoded.userId
+
+    // Soft delete user (set deletedAt)
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+      },
+    })
+
+    return NextResponse.json(
+      {
+        message: 'Account deleted successfully',
+        user: {
+          id: user.id,
+          deletedAt: user.deletedAt,
+        },
+      },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Delete account error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

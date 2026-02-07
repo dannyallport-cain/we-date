@@ -7,6 +7,7 @@ const navigation = [
   { name: 'Discover', href: '/swipe', icon: '🔥' },
   { name: 'Matches', href: '/matches', icon: '💬' },
   { name: 'Profile', href: '/profile', icon: '👤' },
+  { name: 'Settings', href: '/settings', icon: '⚙️' },
 ]
 
 export default function BottomNav() {
