@@ -9,9 +9,10 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: '',
-    age: '',
+    firstName: '',
+    dateOfBirth: '',
     gender: '',
+    interestedIn: '',
   })
   const [error, setError] = useState('')
 
@@ -40,92 +41,111 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-wedate-pink to-wedate-purple flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+    <main className="min-h-screen bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center px-4 py-8">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
+        <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
           Create Account
         </h1>
+        <p className="text-gray-600 text-center mb-6">Join WeDate and start meeting amazing people</p>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-700 mb-2">Email</label>
+            <label className="block text-gray-700 font-medium mb-2">First Name</label>
+            <input
+              type="text"
+              required
+              placeholder="Your first name"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Email</label>
             <input
               type="email"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
+              placeholder="you@example.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2">Password</label>
+            <label className="block text-gray-700 font-medium mb-2">Password</label>
             <input
               type="password"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
+              placeholder="At least 8 characters"
+              minLength={8}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2">Name</label>
+            <label className="block text-gray-700 font-medium mb-2">Date of Birth</label>
             <input
-              type="text"
+              type="date"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+              value={formData.dateOfBirth}
+              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
             />
+            <p className="text-sm text-gray-500 mt-1">You must be 18 or older</p>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2">Age</label>
-            <input
-              type="number"
-              required
-              min="18"
-              max="100"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
-              value={formData.age}
-              onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 mb-2">Gender</label>
+            <label className="block text-gray-700 font-medium mb-2">I am a</label>
             <select
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.gender}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
             >
-              <option value="">Select gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="non-binary">Non-binary</option>
-              <option value="other">Other</option>
+              <option value="">Select your gender</option>
+              <option value="MAN">Man</option>
+              <option value="WOMAN">Woman</option>
+              <option value="NON_BINARY">Non-binary</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Interested in</label>
+            <select
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+              value={formData.interestedIn}
+              onChange={(e) => setFormData({ ...formData, interestedIn: e.target.value })}
+            >
+              <option value="">Select preference</option>
+              <option value="MAN">Men</option>
+              <option value="WOMAN">Women</option>
+              <option value="EVERYONE">Everyone</option>
             </select>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-wedate-pink to-wedate-purple text-white font-semibold py-3 rounded-lg hover:opacity-90 transition-all"
+            className="w-full bg-gradient-to-r from-primary-500 to-accent-500 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-glow active:scale-95 transition-all duration-200 text-lg"
           >
-            Sign Up
+            Create Account
           </button>
         </form>
 
         <p className="text-center text-gray-600 mt-6">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-wedate-pink font-semibold">
+          <Link href="/auth/login" className="text-primary-600 font-semibold hover:text-primary-700">
             Log In
           </Link>
         </p>
