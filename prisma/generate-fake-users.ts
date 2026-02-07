@@ -292,8 +292,8 @@ function generatePromptAnswer(question: string) {
   return faker.helpers.arrayElement(answers[question as keyof typeof answers] || ['Something interesting about me'])
 }
 
-async function generateFakeUsers(count: number = 500) {
-  console.log(`🚀 Generating ${count} fake female users...`)
+async function generateFakeUsers(count: number = 100, genderDistribution: { male: number, trans: number } = { male: 80, trans: 20 }) {
+  console.log(`🚀 Generating ${count} fake users (${genderDistribution.male} male, ${genderDistribution.trans} trans)...`)
 
   const interestList = await prisma.interest.findMany({
     select: { id: true, name: true },
@@ -305,9 +305,23 @@ async function generateFakeUsers(count: number = 500) {
   const passwordHash = await hashPassword('Password123!')
 
   const users = []
+  const totalMale = genderDistribution.male
+  const totalTrans = genderDistribution.trans
 
   for (let i = 0; i < count; i++) {
-    const firstName = faker.person.firstName('female')
+    // Determine gender for this user
+    let gender: 'MAN' | 'NON_BINARY'
+    let fakerGender: 'male' | 'female'
+    
+    if (i < totalMale) {
+      gender = 'MAN'
+      fakerGender = 'male'
+    } else {
+      gender = 'NON_BINARY' // Using NON_BINARY for trans users
+      fakerGender = faker.helpers.arrayElement(['male', 'female']) // Mix for trans users
+    }
+
+    const firstName = faker.person.firstName(fakerGender)
     const lastName = faker.person.lastName()
     const displayName = firstName
     const email = faker.internet.email({ firstName, lastName }).toLowerCase()
@@ -321,9 +335,13 @@ async function generateFakeUsers(count: number = 500) {
 
     const bio = generateBio()
 
-    const jobTitles = ['Software Developer', 'Designer', 'Teacher', 'Nurse', 'Artist', 'Writer', 'Chef', 'Entrepreneur', 'Marketing Manager', 'Accountant', 'Doctor', 'Lawyer', 'Photographer', 'Journalist', 'Architect']
-    const companies = ['TechCorp', 'Design Studio', 'Local School', 'City Hospital', 'Art Gallery', 'Publishing House', 'Restaurant Chain', 'Startup Inc', 'Marketing Agency', 'Consulting Firm', 'Medical Center', 'Law Firm', 'Photo Studio', 'News Outlet', 'Architecture Firm']
-    const schools = ['University of Manchester', 'University of Liverpool', 'University of Leeds', 'University of Sheffield', 'Newcastle University', 'University of Birmingham', 'Local College', 'Community College']
+    const jobTitles = ['Software Developer', 'Designer', 'Teacher', 'Nurse', 'Artist', 'Writer', 'Chef', 'Entrepreneur', 'Marketing Manager', 'Accountant', 'Doctor', 'Lawyer', 'Photographer', 'Journalist', 'Architect', 'Engineer', 'Consultant', 'Manager', 'Analyst', 'Therapist']
+    const companies = ['TechCorp', 'Design Studio', 'Local School', 'City Hospital', 'Art Gallery', 'Publishing House', 'Restaurant Chain', 'Startup Inc', 'Marketing Agency', 'Consulting Firm', 'Medical Center', 'Law Firm', 'Photo Studio', 'News Outlet', 'Architecture Firm', 'Tech Solutions', 'Digital Agency', 'Healthcare Ltd', 'Creative Studios']
+    const schools = ['University of Manchester', 'University of Liverpool', 'University of Leeds', 'University of Sheffield', 'Newcastle University', 'University of Birmingham', 'Local College', 'Community College', 'Technical Institute', 'Art School']
+
+    // Adjust height based on gender
+    const heightRange = gender === 'MAN' ? { min: 165, max: 195 } : { min: 150, max: 185 }
+    const height = faker.number.int(heightRange)
 
     const user = {
       email,
@@ -333,13 +351,13 @@ async function generateFakeUsers(count: number = 500) {
       lastName,
       displayName,
       dateOfBirth,
-      gender: 'WOMAN' as const,
+      gender,
       interestedIn: faker.helpers.arrayElements(['MAN', 'WOMAN', 'NON_BINARY'], { min: 1, max: 3 }),
       bio,
       jobTitle: faker.helpers.arrayElement(jobTitles),
       company: faker.helpers.maybe(() => faker.helpers.arrayElement(companies)),
       school: faker.helpers.maybe(() => faker.helpers.arrayElement(schools)),
-      height: faker.number.int({ min: 150, max: 180 }),
+      height,
       location,
       latitude,
       longitude,
@@ -437,7 +455,7 @@ async function generateFakeUsers(count: number = 500) {
 
 async function main() {
   try {
-    await generateFakeUsers(150)
+    await generateFakeUsers(100, { male: 80, trans: 20 })
   } catch (error) {
     console.error('Error generating fake users:', error)
   } finally {
