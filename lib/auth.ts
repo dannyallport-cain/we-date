@@ -1,7 +1,13 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+function getJWTSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  return secret
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
@@ -12,12 +18,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function generateToken(userId: number): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' })
+  return jwt.sign({ userId }, getJWTSecret(), { expiresIn: '7d' })
 }
 
 export function verifyToken(token: string): { userId: number } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: number }
+    return jwt.verify(token, getJWTSecret()) as { userId: number }
   } catch {
     return null
   }
