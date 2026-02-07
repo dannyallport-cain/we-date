@@ -2,14 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import BottomNav from '@/components/BottomNav'
 
 interface UserProfile {
-  name: string
+  id: string
+  displayName: string
+  firstName: string
+  dateOfBirth: Date
   age: number
   email: string
-  bio: string
-  location: string
+  bio?: string
+  location?: string
   gender: string
+  jobTitle?: string
+  company?: string
+  photos: { url: string; order: number }[]
+  interests: { interest: { name: string; icon?: string } }[]
+  prompts: { prompt: { text: string }; response: string }[]
 }
 
 export default function ProfilePage() {
@@ -19,6 +28,8 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     bio: '',
     location: '',
+    jobTitle: '',
+    company: '',
   })
   const [loading, setLoading] = useState(true)
 
@@ -46,6 +57,8 @@ export default function ProfilePage() {
         setFormData({
           bio: data.profile.bio || '',
           location: data.profile.location || '',
+          jobTitle: data.profile.jobTitle || '',
+          company: data.profile.company || '',
         })
       }
       setLoading(false)
@@ -83,132 +96,203 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full border-4 border-primary-500 border-t-transparent animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading profile...</p>
+        </div>
       </div>
     )
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl">Profile not found</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile not found</h2>
+          <button
+            onClick={() => router.push('/auth/login')}
+            className="text-primary-600 font-semibold hover:text-primary-700"
+          >
+            Go to login
+          </button>
+        </div>
       </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-wedate-pink">💕 WeDate</h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => router.push('/swipe')}
-              className="px-4 py-2 text-gray-700 hover:text-wedate-pink"
-            >
-              Swipe
-            </button>
-            <button
-              onClick={() => router.push('/matches')}
-              className="px-4 py-2 text-gray-700 hover:text-wedate-pink"
-            >
-              Matches
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-red-600 hover:text-red-700"
-            >
-              Logout
-            </button>
+    <main className="min-h-screen bg-gray-50 pb-20">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+          {/* Profile Header */}
+          <div className="h-64 bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white text-8xl font-bold">
+            {profile.displayName?.[0]?.toUpperCase() || profile.firstName?.[0]?.toUpperCase() || '?'}
           </div>
-        </div>
-      </nav>
-
-      {/* Profile */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="h-64 bg-gradient-to-br from-wedate-pink to-wedate-purple flex items-center justify-center text-white text-8xl">
-              {profile.name[0]}
+          
+          <div className="p-8">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-800 mb-1">
+                  {profile.displayName}, {profile.age}
+                </h2>
+                <p className="text-gray-600 text-sm mb-2">{profile.email}</p>
+                {profile.jobTitle && (
+                  <p className="text-gray-700 font-medium">
+                    {profile.jobTitle}{profile.company ? ` at ${profile.company}` : ''}
+                  </p>
+                )}
+                <p className="text-gray-500 text-sm mt-1">
+                  {profile.gender === 'MAN' ? 'Man' : profile.gender === 'WOMAN' ? 'Woman' : 'Non-binary'}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditing(!editing)}
+                className="px-5 py-2.5 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-full hover:shadow-lg active:scale-95 transition-all"
+              >
+                {editing ? 'Cancel' : 'Edit'}
+              </button>
             </div>
-            
-            <div className="p-8">
-              <div className="flex justify-between items-start mb-6">
+
+            {editing ? (
+              <div className="space-y-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-800">
-                    {profile.name}, {profile.age}
-                  </h2>
-                  <p className="text-gray-600">{profile.email}</p>
-                  <p className="text-gray-600">Gender: {profile.gender}</p>
+                  <label className="block text-gray-700 font-medium mb-2">Bio</label>
+                  <textarea
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+                    rows={4}
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    placeholder="Tell us about yourself..."
+                  />
                 </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Location</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="City, Country"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Job Title</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+                    value={formData.jobTitle}
+                    onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                    placeholder="Product Manager"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">Company</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    placeholder="Tech Company"
+                  />
+                </div>
+
                 <button
-                  onClick={() => setEditing(!editing)}
-                  className="px-4 py-2 bg-wedate-pink text-white rounded-lg hover:bg-opacity-90"
+                  onClick={handleUpdate}
+                  className="w-full px-4 py-4 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-bold rounded-xl shadow-lg hover:shadow-glow active:scale-95 transition-all"
                 >
-                  {editing ? 'Cancel' : 'Edit'}
+                  Save Changes
                 </button>
               </div>
-
-              {editing ? (
-                <div className="space-y-4">
+            ) : (
+              <div className="space-y-6">
+                {profile.location && (
                   <div>
-                    <label className="block text-gray-700 mb-2">Bio</label>
-                    <textarea
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
-                      rows={4}
-                      value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                      placeholder="Tell us about yourself..."
-                    />
+                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">📍</span> Location
+                    </h3>
+                    <p className="text-gray-600">{profile.location}</p>
                   </div>
-
+                )}
+                
+                {profile.bio && (
                   <div>
-                    <label className="block text-gray-700 mb-2">Location</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-wedate-pink"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="City, Country"
-                    />
+                    <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                      <span className="text-xl">✨</span> About
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed">{profile.bio}</p>
                   </div>
+                )}
 
-                  <button
-                    onClick={handleUpdate}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-wedate-pink to-wedate-purple text-white font-semibold rounded-lg hover:opacity-90"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {profile.location && (
-                    <div>
-                      <h3 className="font-semibold text-gray-700 mb-1">Location</h3>
-                      <p className="text-gray-600">📍 {profile.location}</p>
+                {profile.interests && profile.interests.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                      <span className="text-xl">❤️</span> Interests
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.interests.map((item, index) => (
+                        <span
+                          key={index}
+                          className="px-4 py-2 bg-gradient-to-r from-primary-50 to-accent-50 text-primary-700 rounded-full text-sm font-medium border border-primary-200"
+                        >
+                          {item.interest.icon} {item.interest.name}
+                        </span>
+                      ))}
                     </div>
-                  )}
-                  
-                  {profile.bio && (
-                    <div>
-                      <h3 className="font-semibold text-gray-700 mb-1">About</h3>
-                      <p className="text-gray-600">{profile.bio}</p>
-                    </div>
-                  )}
+                  </div>
+                )}
 
-                  {!profile.bio && !profile.location && (
-                    <p className="text-gray-500 italic">
-                      Click "Edit" to complete your profile
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                {profile.prompts && profile.prompts.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                      <span className="text-xl">💭</span> My Vibes
+                    </h3>
+                    <div className="space-y-3">
+                      {profile.prompts.map((item, index) => (
+                        <div key={index} className="bg-gray-50 rounded-xl p-4">
+                          <p className="text-gray-700 font-medium mb-1">{item.prompt.text}</p>
+                          <p className="text-gray-900">{item.response}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!profile.bio && !profile.location && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Complete your profile to get more matches!</p>
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold rounded-full shadow-lg hover:shadow-glow active:scale-95 transition-all"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Logout Button */}
+        <div className="mt-6">
+          <button
+            onClick={handleLogout}
+            className="w-full max-w-2xl mx-auto block px-4 py-3 bg-white text-red-600 font-semibold rounded-xl border-2 border-red-600 hover:bg-red-50 active:scale-95 transition-all"
+          >
+            Logout
+          </button>
+        </div>
       </div>
+
+      <BottomNav />
+    </main>
+  )
+}
     </main>
   )
 }
