@@ -16,6 +16,8 @@ interface SwipeCardProps {
     isVerified?: boolean
     photos: { url: string; order: number }[]
     interests?: { interest: { name: string; icon?: string } }[]
+    profileCompletion?: number // 0-100
+    mutualInterests?: number // number of shared interests
   }
   onSwipe: (direction: 'left' | 'right' | 'up') => void
   onCardClick?: () => void
@@ -202,6 +204,18 @@ export default function SwipeCard({ user, onSwipe, onCardClick }: SwipeCardProps
             ))}
           </div>
 
+          {/* Profile Completion Badge */}
+          {user.profileCompletion !== undefined && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-xs font-semibold text-gray-900">
+                  {user.profileCompletion}%
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Swipe Indicators */}
           <div
             className="absolute top-20 right-10 px-6 py-3 border-4 border-green-500 rounded-2xl rotate-12 text-3xl font-black text-green-500 pointer-events-none"
@@ -277,7 +291,13 @@ export default function SwipeCard({ user, onSwipe, onCardClick }: SwipeCardProps
 
           {user.interests && user.interests.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {user.interests.slice(0, 5).map((interest, index) => (
+              {user.mutualInterests && user.mutualInterests > 0 && (
+                <span className="px-3 py-1 bg-pink-500 text-white rounded-full text-sm font-semibold flex items-center gap-1">
+                  <span>💕</span>
+                  {user.mutualInterests} mutual
+                </span>
+              )}
+              {user.interests.slice(0, 4).map((interest, index) => (
                 <span
                   key={index}
                   className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm"

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     email: '',
@@ -37,9 +37,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-gradient-to-br from-red-500 via-pink-500 to-purple-600 flex items-center justify-center px-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
-        <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-red-600 to-purple-700 bg-clip-text text-transparent">
           Welcome Back
         </h1>
         <p className="text-gray-600 text-center mb-6">Sign in to continue your journey</p>
@@ -57,6 +57,7 @@ export default function LoginPage() {
               type="email"
               required
               placeholder="you@example.com"
+              autoComplete="email"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -69,6 +70,7 @@ export default function LoginPage() {
               type="password"
               required
               placeholder="Enter your password"
+              autoComplete="current-password"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -92,4 +94,7 @@ export default function LoginPage() {
       </div>
     </main>
   )
+}
+export default function LoginPage() {
+  return <LoginContent />
 }

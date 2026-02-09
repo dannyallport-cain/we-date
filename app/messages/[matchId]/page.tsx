@@ -176,10 +176,10 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full border-4 border-pink-500 border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading chat...</p>
+          <div className="w-16 h-16 rounded-full border-4 border-primary-500 border-t-transparent animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">Loading chat...</p>
         </div>
       </div>
     );
@@ -187,12 +187,20 @@ export default function ChatPage({ params }: { params: Promise<{ matchId: string
 
   const otherUser = match?.user;
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/matches')
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-3 flex items-center gap-3 shadow-lg">
+      <div className="bg-gradient-to-r from-red-500 via-pink-500 to-purple-600 text-white px-4 py-3 flex items-center gap-3 shadow-lg">
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="w-10 h-10 rounded-full hover:bg-white/20 flex items-center justify-center active:scale-90 transition-all"
         >
           <svg

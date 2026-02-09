@@ -41,9 +41,9 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center px-4 py-8">
+    <main className="min-h-screen bg-gradient-to-br from-red-500 via-pink-500 to-purple-600 flex items-center justify-center px-4 py-8">
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-slide-up">
-        <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold mb-2 text-center bg-gradient-to-r from-red-600 to-purple-700 bg-clip-text text-transparent">
           Create Account
         </h1>
         <p className="text-gray-600 text-center mb-6">Join WeDate and start meeting amazing people</p>
@@ -73,6 +73,7 @@ export default function SignupPage() {
               type="email"
               required
               placeholder="you@example.com"
+              autoComplete="email"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -86,6 +87,7 @@ export default function SignupPage() {
               required
               placeholder="At least 8 characters"
               minLength={8}
+              autoComplete="new-password"
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-gray-900"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}

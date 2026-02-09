@@ -63,18 +63,15 @@ export async function GET(
           },
         },
         prompts: {
-          include: {
+          select: {
+            id: true,
+            answer: true,
             prompt: {
               select: {
                 id: true,
                 question: true,
-              },
+              }
             },
-          },
-          select: {
-            id: true,
-            answer: true,
-            prompt: true,
           },
         },
       },

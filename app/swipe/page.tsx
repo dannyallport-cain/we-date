@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import SwipeCard from '@/components/SwipeCard'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
+import PremiumPaywall from '@/components/PremiumPaywall'
 
 interface User {
   id: string
@@ -25,12 +26,36 @@ export default function SwipePage() {
   const [loading, setLoading] = useState(true)
   const [matchNotification, setMatchNotification] = useState(false)
   const [matchedUser, setMatchedUser] = useState<User | null>(null)
+  const [swipeHistory, setSwipeHistory] = useState<Array<{ user: User; action: string }>>([])
+  const [canUndo, setCanUndo] = useState(false)
+  const [searchExpanded, setSearchExpanded] = useState(false)
+  const [showRewindPaywall, setShowRewindPaywall] = useState(false)
+  const [isPremium, setIsPremium] = useState(false)
 
   useEffect(() => {
     fetchUsers()
+    fetchUserPremiumStatus()
   }, [])
 
-  const fetchUsers = async () => {
+  const fetchUserPremiumStatus = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      const response = await fetch('/api/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setIsPremium(data.profile?.isPremium || false)
+      }
+    } catch (error) {
+      console.error('Error fetching user status:', error)
+    }
+  }
+
+  const fetchUsers = async (expandDistance = false) => {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -38,7 +63,7 @@ export default function SwipePage() {
         return
       }
 
-      const response = await fetch('/api/discover', {
+      const response = await fetch(`/api/discover${expandDistance ? '?expandDistance=true' : ''}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -47,6 +72,9 @@ export default function SwipePage() {
       if (response.ok) {
         const data = await response.json()
         setUsers(data.users || [])
+        if (expandDistance) {
+          setSearchExpanded(true)
+        }
       } else if (response.status === 401) {
         router.push('/auth/login')
       }
@@ -77,6 +105,13 @@ export default function SwipePage() {
 
       const data = await response.json()
 
+      // Add to swipe history for undo functionality
+      setSwipeHistory(prev => [...prev, { 
+        user: currentUser, 
+        action: direction === 'left' ? 'PASS' : direction === 'up' ? 'SUPER_LIKE' : 'LIKE'
+      }])
+      setCanUndo(true)
+
       if (data.matched) {
         setMatchedUser(currentUser)
         setMatchNotification(true)
@@ -87,7 +122,7 @@ export default function SwipePage() {
 
       // Fetch more users if running low
       if (currentIndex >= users.length - 2) {
-        fetchUsers()
+        fetchUsers(searchExpanded)
       }
     } catch (error) {
       console.error('Error swiping:', error)
@@ -95,16 +130,35 @@ export default function SwipePage() {
     }
   }
 
-  const triggerSwipe = (direction: 'left' | 'right' | 'up') => {
-    handleSwipe(direction)
+  const handleUndo = async () => {
+    if (!canUndo || swipeHistory.length === 0) return
+
+    // Check if user is premium
+    if (!isPremium) {
+      setShowRewindPaywall(true)
+      return
+    }
+
+    const lastSwipe = swipeHistory[swipeHistory.length - 1]
+    
+    try {
+      const token = localStorage.getItem('token')
+      // Note: This would require a backend endpoint to undo swipes
+      // For now, we'll just go back to the previous card
+      setCurrentIndex(Math.max(0, currentIndex - 1))
+      setSwipeHistory(prev => prev.slice(0, -1))
+      setCanUndo(swipeHistory.length > 1)
+    } catch (error) {
+      console.error('Error undoing swipe:', error)
+    }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 rounded-full border-4 border-primary-500 border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Finding great matches...</p>
+          <p className="text-gray-700 font-medium">Finding great matches...</p>
         </div>
       </div>
     )
@@ -113,7 +167,7 @@ export default function SwipePage() {
   const currentUser = users[currentIndex]
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 pb-20">
       <TopBar 
         rightAction={
           <button className="text-2xl hover:scale-110 active:scale-95 transition-transform">
@@ -150,19 +204,38 @@ export default function SwipePage() {
           ) : (
             <div className="absolute inset-4 flex items-center justify-center">
               <div className="text-center p-8">
-                <div className="text-6xl mb-4">🎉</div>
+                <div className="text-6xl mb-4">{searchExpanded ? '🌍' : '🔄'}</div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  You're all caught up!
+                  {searchExpanded ? 'Still no more profiles' : 'No more profiles nearby'}
                 </h2>
                 <p className="text-gray-600 mb-6">
-                  Check back later for more profiles
+                  {searchExpanded 
+                    ? 'We\'ve expanded your search distance, but there are still no more profiles available. Check back later!'
+                    : 'Try expanding your search distance or check back later for new matches'
+                  }
                 </p>
-                <button
-                  onClick={() => router.push('/matches')}
-                  className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-glow active:scale-95 transition-all duration-200"
-                >
-                  View Matches
-                </button>
+                <div className="flex flex-col gap-3">
+                  {!searchExpanded && (
+                    <button
+                      onClick={() => fetchUsers(true)}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-glow active:scale-95 transition-all duration-200"
+                    >
+                      🔍 Expand Search Distance
+                    </button>
+                  )}
+                  <button
+                    onClick={() => router.push('/settings')}
+                    className="bg-white text-primary-600 font-semibold py-3 px-6 rounded-full border-2 border-primary-500 hover:bg-primary-50 active:scale-95 transition-all duration-200"
+                  >
+                    Update Discovery Settings
+                  </button>
+                  <button
+                    onClick={() => router.push('/matches')}
+                    className="bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-glow active:scale-95 transition-all duration-200"
+                  >
+                    View Your Matches
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -172,7 +245,7 @@ export default function SwipePage() {
         {currentUser && (
           <div className="flex justify-center items-center gap-4 px-4 mt-4">
             <button
-              onClick={() => triggerSwipe('left')}
+              onClick={() => handleSwipe('left')}
               className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-white border-2 border-red-500 text-red-500 hover:bg-red-50"
               aria-label="Pass"
             >
@@ -182,7 +255,24 @@ export default function SwipePage() {
             </button>
             
             <button
-              onClick={() => triggerSwipe('up')}
+              onClick={handleUndo}
+              disabled={!canUndo}
+              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-white border-2 border-gray-400 text-gray-400 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed relative"
+              aria-label="Undo last swipe"
+              title="Undo (Premium Feature)"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              {!isPremium && canUndo && (
+                <span className="absolute -top-2 -right-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                  👑
+                </span>
+              )}
+            </button>
+            
+            <button
+              onClick={() => handleSwipe('up')}
               className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-white border-2 border-blue-500 text-blue-500 hover:bg-blue-50 text-2xl"
               aria-label="Super Like"
             >
@@ -190,7 +280,7 @@ export default function SwipePage() {
             </button>
             
             <button
-              onClick={() => triggerSwipe('right')}
+              onClick={() => handleSwipe('right')}
               className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl active:scale-90 transition-all duration-200 bg-gradient-to-br from-primary-500 to-accent-500 text-white"
               aria-label="Like"
             >
@@ -231,6 +321,15 @@ export default function SwipePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Rewind Premium Paywall */}
+      {showRewindPaywall && (
+        <PremiumPaywall
+          featureName="Rewind Swipes"
+          featureEmoji="↩️"
+          onClose={() => setShowRewindPaywall(false)}
+        />
       )}
     </div>
   )

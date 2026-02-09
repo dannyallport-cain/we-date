@@ -60,19 +60,19 @@ export default function MatchesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-full border-4 border-pink-500 border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading matches...</p>
+          <div className="w-16 h-16 rounded-full border-4 border-primary-500 border-t-transparent animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">Loading matches...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20">
+    <main className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-6 shadow-lg">
+      <div className="bg-gradient-to-r from-red-500 via-pink-500 to-purple-600 text-white px-4 py-6 shadow-lg">
         <h1 className="text-2xl font-bold">Matches</h1>
         <p className="text-sm text-white/80 mt-1">
           {matches.length} {matches.length === 1 ? 'match' : 'matches'}

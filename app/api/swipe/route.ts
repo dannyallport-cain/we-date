@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
+import { checkDailySwipeLimit } from '@/lib/limits'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,21 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid action' },
         { status: 400 }
       )
+    }
+
+    // Check limits for LIKE or SUPER_LIKE
+    if (action === 'LIKE' || action === 'SUPER_LIKE') {
+      const limitStatus = await checkDailySwipeLimit(userId)
+      if (!limitStatus.allowed) {
+        return NextResponse.json(
+          { 
+            error: 'Daily like limit reached', 
+            code: 'LIMIT_REACHED',
+            limit: limitStatus.limit 
+          },
+          { status: 403 }
+        )
+      }
     }
 
     // Record swipe

@@ -49,7 +49,7 @@ export default function Home() {
 
         <div className={`relative z-10 max-w-4xl mx-auto text-center transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {/* App Icon/Logo */}
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-3xl shadow-2xl mb-8 animate-bounce-subtle">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-red-500 to-pink-600 rounded-3xl shadow-2xl mb-8 animate-bounce-subtle">
             <span className="text-5xl">💕</span>
           </div>
 

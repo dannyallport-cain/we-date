@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #FEF2F5;
-  --color-primary-100: #FDE7ED;
-  --color-primary-200: #FBC7DD;
-  --color-primary-300: #F89CCE;
-  --color-primary-400: #F56DB5;
-  --color-primary-500: #E84C8F;
-  --color-primary-600: #D92E6F;
-  --color-primary-700: #C01A56;
-  --color-primary-800: #A01346;
-  --color-primary-900: #7D0D36;
+  --color-primary-50: #FEE8F0;
+  --color-primary-100: #FDD0E3;
+  --color-primary-200: #FBA8CC;
+  --color-primary-300: #F878AA;
+  --color-primary-400: #F5548C;
+  --color-primary-500: #E61D6F;
+  --color-primary-600: #D60B5F;
+  --color-primary-700: #C10052;
+  --color-primary-800: #9D0048;
+  --color-primary-900: #7A003C;
   
-  --color-accent-50: #F5EDFF;
-  --color-accent-100: #EEDDFF;
-  --color-accent-200: #DBBAFF;
-  --color-accent-300: #C894FF;
-  --color-accent-400: #B562FF;
-  --color-accent-500: #9D4EFF;
-  --color-accent-600: #8B2FFF;
-  --color-accent-700: #7A1BFF;
-  --color-accent-800: #6B0FE6;
-  --color-accent-900: #5607CC;
+  --color-accent-50: #F0E8FF;
+  --color-accent-100: #E0D0FF;
+  --color-accent-200: #C5A8FF;
+  --color-accent-300: #A878FF;
+  --color-accent-400: #8F54FF;
+  --color-accent-500: #7030FF;
+  --color-accent-600: #6018FF;
+  --color-accent-700: #5200E6;
+  --color-accent-800: #4500CC;
+  --color-accent-900: #3A00B2;
   
   --color-success-50: #F0FDF4;
   --color-success-400: #4ADE80;
@@ -92,6 +92,19 @@ select {
   @apply text-gray-500;
 }
 
+/* Gradient background for hero sections */
+.gradient-bg {
+  background: linear-gradient(135deg, #E61D6F 0%, #7030FF 50%, #2563EB 100%);
+  position: relative;
+}
 
-
+/* SVG gradient for more advanced effects */
+.gradient-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(230, 29, 111, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(112, 48, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
 

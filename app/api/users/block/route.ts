@@ -36,21 +36,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create block (you'll need to add Block model to schema)
-    // For now, we'll log it
-    console.log('User block:', {
-      blockerId: decoded.userId,
-      blockedUserId: userId,
-      timestamp: new Date(),
+    // Create block
+    await prisma.block.create({
+      data: {
+        userId: decoded.userId,
+        blockedUserId: userId,
+      },
     });
-
-    // TODO: Add Block model to schema and save to database
-    // await prisma.block.create({
-    //   data: {
-    //     blockerId: decoded.userId,
-    //     blockedId: userId,
-    //   },
-    // });
 
     // Delete any existing match
     await prisma.match.updateMany({

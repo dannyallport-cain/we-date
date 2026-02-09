@@ -185,12 +185,12 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-pink-50 to-purple-50 pb-20">
       {/* Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
-        <div className="relative h-1 bg-gray-200">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg">
+        <div className="relative h-1 bg-gray-300">
           <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300"
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500 via-pink-500 to-purple-600 transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>

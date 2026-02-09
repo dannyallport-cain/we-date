@@ -36,24 +36,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create report (you'll need to add Report model to schema)
-    // For now, we'll log it
-    console.log('User report:', {
-      reporterId: decoded.userId,
-      reportedUserId: userId,
-      reason,
-      timestamp: new Date(),
+    // Create report
+    await prisma.report.create({
+      data: {
+        reporterId: decoded.userId,
+        reportedUserId: userId,
+        reason,
+        description: reason === 'OTHER' ? 'Other reason' : null,
+      },
     });
-
-    // TODO: Add Report model to schema and save to database
-    // await prisma.report.create({
-    //   data: {
-    //     reporterId: decoded.userId,
-    //     reportedId: userId,
-    //     reason,
-    //     status: 'pending',
-    //   },
-    // });
 
     return NextResponse.json(
       { message: 'Report submitted successfully' },

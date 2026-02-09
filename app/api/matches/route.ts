@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
             location: true,
             jobTitle: true,
             company: true,
+            isVerified: true,
+            isPremium: true,
             lastActive: true,
             photos: {
               where: { isPrimary: true },
@@ -64,6 +66,8 @@ export async function GET(request: NextRequest) {
             location: true,
             jobTitle: true,
             company: true,
+            isVerified: true,
+            isPremium: true,
             lastActive: true,
             photos: {
               where: { isPrimary: true },

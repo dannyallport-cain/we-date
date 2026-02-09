@@ -5,6 +5,10 @@ export default {
         protocol: 'https',
         hostname: 'localhost',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
 }

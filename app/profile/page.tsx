@@ -95,12 +95,20 @@ export default function ProfilePage() {
     router.push('/')
   }
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/swipe')
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 rounded-full border-4 border-primary-500 border-t-transparent animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading profile...</p>
+          <p className="text-gray-700 font-medium">Loading profile...</p>
         </div>
       </div>
     )
@@ -108,7 +116,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😕</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile not found</h2>
@@ -124,11 +132,27 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <main className="min-h-screen bg-gradient-to-br from-red-100 to-purple-100 pb-20">
+      {/* Header with Back Button */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={handleBack}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-lg font-semibold text-gray-800">My Profile</h1>
+          <div className="w-10"></div>
+        </div>
+      </div>
+      
+      <div className="container mx-auto px-4 py-8 max-w-2xl mt-14">
         <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
           {/* Profile Header */}
-          <div className="h-64 bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white text-8xl font-bold">
+          <div className="h-64 bg-gradient-to-br from-red-500 to-purple-600 flex items-center justify-center text-white text-8xl font-bold">
             {profile.displayName?.[0]?.toUpperCase() || profile.firstName?.[0]?.toUpperCase() || '?'}
           </div>
           

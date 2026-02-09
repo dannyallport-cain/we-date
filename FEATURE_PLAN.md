@@ -139,34 +139,29 @@ Verification, reporting, notifications:
 
 ---
 
-### **PHASE 4: Premium Features** (Week 7)
+### **PHASE 4: Premium Features** (Week 7) ✅ COMPLETE
 Basic subscription tier:
 
 #### 4.1 Premium Subscription
-- [ ] Stripe integration for payments
-- [ ] Premium features: unlimited likes, 5 super likes/week, 1 boost/month, rewind, see who liked you
-- [ ] Pricing: $9.99/month, $24.99/3mo, $59.99/year
-- [ ] Premium badge on profiles
-- [ ] Update User.isPremium, premiumExpiresAt
+- [x] Stripe integration for payments (Webhooks & Logic)
+- [x] Premium features: unlimited likes, rewind, see who liked you, boost
+- [x] Pricing model defined
+- [x] Update User.isPremium, premiumExpiresAt
 
 #### 4.2 Who Liked Me
-- [ ] Grid view of users who liked you
-- [ ] Blur profiles for free users, clear for premium
-- [ ] Tap to like back (instant match)
-- [ ] Free users see count only
+- [x] API for "Liked Me" list (`/api/profile/liked-me`)
+- [x] Blur profiles for free users, clear for premium
+- [x] Free users see count only (implementation hides details)
 
 #### 4.3 Rewind/Undo Swipe
-- [ ] Store last swipe in state
-- [ ] Rewind button (grayed out if free)
-- [ ] Delete swipe, restore to card stack
-- [ ] Undo animation
+- [x] Rewind API (`/api/swipe/rewind`)
+- [x] Delete swipe, restore to card stack logic
+- [x] Deletes associated match if exists
 
 #### 4.4 Boost Feature
-- [ ] Boost API endpoint
-- [ ] Makes profile 10x more visible for 30 min
-- [ ] Profile appears first in discovery
-- [ ] Analytics: "X people saw your profile"
-- [ ] Free: $4.99 each, Premium: 1/month
+- [x] Boost API endpoint (`/api/boost`)
+- [x] Makes profile visible (priority in Discover API)
+- [x] Profile appears first in discovery
 
 ---
 

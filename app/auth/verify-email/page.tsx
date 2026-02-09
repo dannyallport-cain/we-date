@@ -108,12 +108,12 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-500 via-pink-500 to-purple-600 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center text-4xl">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-red-500 to-purple-600 flex items-center justify-center text-4xl">
               📧
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

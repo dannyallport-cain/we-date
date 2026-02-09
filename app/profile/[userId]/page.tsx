@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import PhotoCarousel from '@/components/PhotoCarousel';
+import ReportModal from '@/components/ReportModal';
+import BlockModal from '@/components/BlockModal';
 
 interface UserProfile {
   id: string;
@@ -49,6 +51,7 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
@@ -123,67 +126,52 @@ export default function UserProfilePage() {
   };
 
   const handleBlock = async () => {
-    if (!profile || !confirm('Are you sure you want to block this user?')) return;
+    if (!profile) throw new Error('No profile loaded');
 
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (!token) {
-        toast.error('Please login to continue');
-        return;
-      }
-
-      const response = await fetch('/api/users/block', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userId: profile.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to block user');
-      }
-
-      toast.success('User blocked');
-      router.push('/swipe');
-    } catch (error) {
-      console.error('Block error:', error);
-      toast.error('Failed to block user');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      throw new Error('Please login to continue');
     }
+
+    const response = await fetch('/api/users/block', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId: profile.id }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to block user');
+    }
+
+    // Navigate away after successful block
+    router.push('/swipe');
   };
 
   const handleReport = async (reason: string) => {
-    if (!profile) return;
+    if (!profile) throw new Error('No profile loaded');
 
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (!token) {
-        toast.error('Please login to continue');
-        return;
-      }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      throw new Error('Please login to continue');
+    }
 
-      const response = await fetch('/api/users/report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: profile.id,
-          reason,
-        }),
-      });
+    const response = await fetch('/api/users/report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userId: profile.id,
+        reason,
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to report user');
-      }
-
-      toast.success('Report submitted. Thank you.');
-      setShowReportModal(false);
-    } catch (error) {
-      console.error('Report error:', error);
-      toast.error('Failed to submit report');
+    if (!response.ok) {
+      throw new Error('Failed to report user');
     }
   };
 
@@ -226,13 +214,21 @@ export default function UserProfilePage() {
     );
   }
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/swipe')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <svg className="w-6 h-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -251,7 +247,7 @@ export default function UserProfilePage() {
               </svg>
             </button>
             <button
-              onClick={handleBlock}
+              onClick={() => setShowBlockModal(true)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               title="Block"
             >
@@ -400,42 +396,22 @@ export default function UserProfilePage() {
       )}
 
       {/* Report Modal */}
-      {showReportModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h2 className="text-xl font-bold text-gray-900">Report User</h2>
-            <p className="text-sm text-gray-600">
-              Why are you reporting this profile?
-            </p>
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        userId={profile.id}
+        userName={profile.displayName}
+        onReport={handleReport}
+      />
 
-            <div className="space-y-2">
-              {[
-                'Inappropriate photos',
-                'Spam or scam',
-                'Harassment',
-                'Underage user',
-                'Fake profile',
-                'Other',
-              ].map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleReport(reason)}
-                  className="w-full py-3 px-4 text-left border-2 border-gray-300 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all text-gray-900 font-medium"
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setShowReportModal(false)}
-              className="w-full py-3 bg-gray-100 text-gray-900 font-semibold rounded-xl hover:bg-gray-200 transition-all"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Block Modal */}
+      <BlockModal
+        isOpen={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        userId={profile.id}
+        userName={profile.displayName}
+        onBlock={handleBlock}
+      />
     </div>
   );
 }
